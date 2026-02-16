@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maid Video Upload</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #f5f6fa;
+        color: #2f3640;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        margin: 40px auto;
+        padding: 30px;
+        background: white;
+        width: 480px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        margin-bottom: 15px;
+        color: #273c75;
+      }
+      video {
+        border-radius: 12px;
+        width: 100%;
+        max-width: 360px;
+        height: auto;
+        margin-bottom: 15px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      }
+      textarea,
+      input,
+      button {
+        width: 100%;
+        margin: 8px 0;
+        padding: 8px;
+      }
+      textarea {
+        height: 120px;
+      }
+      button {
+        background-color: #0097e6;
+        border: none;
+        color: white;
+        padding: 10px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 6px;
+        transition: 0.3s;
+      }
+      button:hover {
+        background-color: #0984e3;
+      }
+      .status {
+        margin-top: 12px;
+        font-weight: bold;
+        color: #2f3640;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>🎬 Upload Maid Video & Info</h2>
+
+      <!-- Maid JSON -->
+      <label for="maidData">Maid Info JSON:</label>
+      <textarea id="maidData">
+{
+  "data": [
+    {
+      "id": 16878,
+      "uniqueId": "77649763",
+      "maidName": "Veditha",
+      "maidMobile": "71530260"
+    }
+  ]
+}
+  </textarea
+      >
+
+      <!-- Video input + preview -->
+      <label for="maidVideo">Select Video:</label>
+      <input type="file" id="maidVideo" accept="video/*" />
+      <video id="videoPreview" controls style="display: none"></video>
+
+      <button id="uploadBtn">Upload Video & Generate Embeddings</button>
+      <p class="status" id="status"></p>
+
+      <div style="text-align: left; margin-top: 20px">
+        <h3>API Response</h3>
+        <pre id="responseText"></pre>
+      </div>
+    </div>
+
+    <script>
+      const uploadBtn = document.getElementById("uploadBtn");
+      const statusText = document.getElementById("status");
+      const responseText = document.getElementById("responseText");
+      const maidVideoInput = document.getElementById("maidVideo");
+      const videoPreview = document.getElementById("videoPreview");
+
+      // Show video preview
+      maidVideoInput.addEventListener("change", () => {
+        const file = maidVideoInput.files[0];
+        if (file) {
+          const url = URL.createObjectURL(file);
+          videoPreview.src = url;
+          videoPreview.style.display = "block";
+        }
+      });
+
+      uploadBtn.addEventListener("click", async () => {
+        const maidData = document.getElementById("maidData").value;
+        const videoFile = maidVideoInput.files[0];
+
+        if (!videoFile) {
+          alert("Please select a video file!");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("maid_video", videoFile);
+        formData.append("data", maidData);
+        formData.append("serverName", "testserver");
+
+        statusText.innerText = "⏳ Uploading video...";
+        uploadBtn.disabled = true;
+
+        try {
+          const response = await fetch("http://10.14.20.100:8000/form/", {
+            method: "POST",
+            body: formData,
+            mode: "cors", // ensures CORS is respected
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const result = await response.json();
+          statusText.innerText = result.message || "✅ Upload complete!";
+          responseText.textContent = JSON.stringify(result, null, 4);
+        } catch (err) {
+          console.error(err);
+          statusText.innerText = "❌ Upload failed. Check console.";
+          responseText.textContent = err;
+        } finally {
+          uploadBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
