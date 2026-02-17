@@ -11,6 +11,18 @@ from django.shortcuts import render
 from datetime import datetime
 import threading
 
+
+
+model_loaded = False
+
+def load_model_once():
+    global model_loaded
+    if not model_loaded:
+        DeepFace.build_model("Facenet")
+        model_loaded = True
+
+
+
 # -------------------- THREAD LOCKS --------------------
 csv_lock = threading.Lock()
 embedding_lock = threading.Lock()
@@ -18,7 +30,7 @@ model_lock = threading.Lock()
 
 # -------------------- LOAD MODEL ONCE --------------------
 print("⚙️ Loading Facenet model once...")
-DeepFace.build_model("Facenet")  # ❗this loads and caches model internally
+# DeepFace.build_model("Facenet")  # ❗this loads and caches model internally
 print("✅ Facenet model ready.")
 
 # -------------------- LOG FILE --------------------
@@ -86,6 +98,7 @@ def recognize_from_form(request):
             # -------------------- Generate Embedding --------------------
             print("🧠 Extracting embedding using DeepFace (Facenet)...")
             with model_lock:
+                load_model_once()
                 embedding_result = DeepFace.represent(
                     image,
                     model_name='Facenet',
